@@ -9,28 +9,22 @@ create table cases
 (
     id serial constraint cases_pkey primary key,
 
-    defendant_name text not null,
-    defendant_type_id integer not null references defendant_types(id),
-    initiation_date date not null,
-
-    case_identifier text not null,
+    release_date date not null,
+    release_number text not null,
 
     proceeding_type_id integer not null references proceeding_types(id),
-    alleged_infraction_type_id integer not null references alleged_infraction_types(id),
-    relief_sought_type_id integer not null references relief_sought_types(id),
-    relief_sought_value numeric,
 
     has_admitted_guilt boolean not null,
     is_settled_at_initiation boolean not null,
-
     distribution_fund boolean not null,
+
     comments text,
 
     created_at timestamp not null default now(),
     updated_at timestamp not null default now(),
     updated_by text not null default "current_user"(),
 
-    unique(case_identifier)
+    unique(release_number)
 );
 
 -- Not all cases make it to court and since some have appeals, there can be more than one court
@@ -44,6 +38,8 @@ create table court_cases
 
     court_case_identifier integer not null,
     trial_result_type_id integer references trial_result_types(id),
+
+    is_appeal boolean not null,
 
     created_at timestamp not null default now(),
     updated_at timestamp not null default now(),
@@ -83,7 +79,9 @@ create table defendants
     id serial constraint cases_pkey primary key,
 
     name text not null,
+    comments text,
 
+    defendant_type_id references defendant_types(id),
     case_id integer not null references cases(id),
 
     created_at timestamp not null default now(),
@@ -104,6 +102,7 @@ create table proceeding_types
     updated_by text not null default "current_user"()
 );
 
+-- Types of relief: there can be more than one demand per case
 create table relief_sought_types
 (
     id serial constraint cases_pkey primary key,
@@ -115,6 +114,24 @@ create table relief_sought_types
     updated_by text not null default "current_user"()
 
 );
+
+
+create table relief_sought
+(
+
+    id serial constraint cases_pkey primary key,
+
+    relief_sought_type_id not null references relief_sought_types(id),
+    case_id not null references cases(id),
+    
+    relief_sought_value numeric,
+
+    created_at timestamp not null default now(),
+    updated_at timestamp not null default now(),
+    updated_by text not null default "current_user"()
+
+);
+
 
 -- What does a citation look like?
 create table citations
@@ -130,6 +147,7 @@ create table citations
 
 );
 
+-- Defendant lawyers: more than one per case
 create table defendant_lawyers
 (
     id serial constraint defendant_lawyers_pkey primary key,
@@ -140,6 +158,35 @@ create table defendant_lawyers
     created_at timestamp not null default now(),
     updated_at timestamp not null default now(),
     updated_by text not null default "current_user"()
+);
+
+-- Alleged infractions: potentially more than one per case
+create table alleged_infraction_types
+(
+
+    id serial constraint alleged_infraction_types_pkey primary key,
+
+    name text not null,
+
+    created_at timestamp not null default now(),
+    updated_at timestamp not null default now(),
+    updated_by text not null default "current_user"()
+
+);
+
+create table alleged_infractions
+(
+
+    id serial constraint alleged_infraction_types_pkey primary key,
+
+    case_id not null references cases(id),
+
+    alleged_infraction_type_id not null references alleged_infraction_types(id),
+
+    created_at timestamp not null default now(),
+    updated_at timestamp not null default now(),
+    updated_by text not null default "current_user"()
+    
 );
 
 create table trial_result_types
